@@ -1,0 +1,17 @@
+node_modules
+.dist
+dist
+.env*
+logs
+coverage
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+jots.ts
+jots.yml
+
+# production environment/secrets 
+src/api/helpers/config/env/production.ts
