@@ -153,13 +153,15 @@ const createUserSchema = object({
 
 const loginUserSchema = object({
   body: object({
-    phonenumber: string({
-      required_error: "Your Phone number is required",
-    }).refine((phoneNo) => validator.isMobilePhone(phoneNo), {
-      message: "Invalid phone number: ",
-    }),
-    password: string({
-      required_error: "Password is required",
+    userData: object({
+      phonenumber: string({
+        required_error: "Your Phone number is required",
+      }).refine((phoneNo) => validator.isMobilePhone(phoneNo), {
+        message: "Invalid phone number: ",
+      }),
+      password: string({
+        required_error: "Password is required",
+      }),
     }),
   }),
 });
