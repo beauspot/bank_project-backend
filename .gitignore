@@ -2,8 +2,10 @@ node_modules
 .dist
 dist
 .env*
+.prod.env
 logs
 coverage
+jots.ts
 
 # Logs
 *.log
@@ -15,3 +17,6 @@ jots.yml
 
 # production environment/secrets 
 src/api/helpers/config/env/production.ts
+certificates/*.pem
+certificates/*.crt
+certificates/*.key
