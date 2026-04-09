@@ -83,6 +83,8 @@ const AppDataSource = new DataSource({
   synchronize: config.node_env === "development" || config.node_env === "test",
   migrations: getMigrationsPath(),
   migrationsTableName: config.db.db_migration_name || "migrations",
+  migrationsRun: false,
+  migrationsTransactionMode: "all",
   ssl: getSSLConfig(),
   poolSize: getPoolSize(),
   extra: {
