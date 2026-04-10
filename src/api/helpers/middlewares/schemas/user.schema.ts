@@ -155,9 +155,12 @@ const loginUserSchema = object({
   body: object({
     userData: object({
       phonenumber: string({
-        required_error: "Your Phone number is required",
+        required_error: "Your Phone number email or username is required",
       }).refine((phoneNo) => validator.isMobilePhone(phoneNo), {
         message: "Invalid phone number: ",
+      }),
+      email: string({
+        required_error: "Your email is required",
       }),
       password: string({
         required_error: "Password is required",
