@@ -35,7 +35,7 @@ const redisClient = new Redis({
 // const RedisStore = connectRedis(session);
 const redisStore = new RedisStore({
   client: redisClient,
-  prefix: "paymetro-sessions:",
+  prefix: "bankExpress-sessions:",
   ttl: 1800, // 30mins
   disableTouch: false,
   disableTTL: false,
