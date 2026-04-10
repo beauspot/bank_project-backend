@@ -66,4 +66,9 @@ type AppSession = session.Session & {
   role?: UserRole;
 };
 
-export { UserInterface, UserServiceInterface, UserAcctPayloadInterface, AppSession };
+export {
+  UserInterface,
+  UserServiceInterface,
+  UserAcctPayloadInterface,
+  AppSession,
+};
