@@ -23,7 +23,7 @@
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
     "resolveJsonModule": true,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "types": ["vitest/globals"],
     "paths": {
       "@/*": ["./src/*"],
