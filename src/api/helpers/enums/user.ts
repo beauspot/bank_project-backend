@@ -1,7 +1,7 @@
 export enum UserRole {
   CUSTOMER = "customer",
   ADMIN = "admin",
-  SUPERADMIN = "superadmin",
+  AUDITOR = "AUDITOR",
 }
 
 /* export enum UserType {
@@ -12,4 +12,15 @@ export enum UserRole {
 export enum GenderType {
   MALE = "male",
   FEMALE = "female",
+}
+
+export enum EmailStatus {
+  VERIFIED = "Verified",
+  NOT_VERIFIED = "Not_Verified",
+}
+
+export enum AccountStatus {
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
+  SUSPENDED = "SUSPENDED",
 }
