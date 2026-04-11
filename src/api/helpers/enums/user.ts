@@ -1,4 +1,4 @@
-export enum UserRole {
+enum UserRole {
   CUSTOMER = "customer",
   ADMIN = "admin",
   AUDITOR = "AUDITOR",
@@ -9,18 +9,34 @@ export enum UserRole {
   CUSTOMER = "customer",
 } */
 
-export enum GenderType {
+enum GenderType {
   MALE = "male",
   FEMALE = "female",
 }
 
-export enum EmailStatus {
+enum EmailStatus {
   VERIFIED = "Verified",
   NOT_VERIFIED = "Not_Verified",
 }
 
-export enum AccountStatus {
+enum AccountStatus {
   ACTIVE = "ACTIVE",
   INACTIVE = "INACTIVE",
   SUSPENDED = "SUSPENDED",
+  BLOCKED = "BLOCKED",
+  PENDING = "PENDING"
+}
+
+enum AccountType {
+  SAVINGS = "savings",
+  CURRENT = "current",
+  VIRTUAL = "virtual",
+}
+
+export {
+  UserRole,
+  GenderType,
+  EmailStatus,
+  AccountStatus,
+  AccountType,
 }
