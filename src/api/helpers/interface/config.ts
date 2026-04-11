@@ -28,4 +28,10 @@ export interface AppConfig {
     redis_url_host: string | undefined;
     redis_url_port: string | undefined;
   };
+
+  paystack: {
+      paystack_secret_key: string | undefined;
+      paystack_public_key: string | undefined;
+      prefered_bank: string | undefined;
+  }
 }
