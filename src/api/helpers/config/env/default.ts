@@ -34,6 +34,11 @@ const default_config: AppConfig = {
     redis_url_host: process.env.REDIS_URL_HOST,
     redis_url_port: process.env.REDIS_URL_PORT,
   },
+  paystack: {
+    paystack_secret_key: process.env.TEST_SECRET_KEY,
+    paystack_public_key: process.env.TEST_PUBLIC_KEY,
+    prefered_bank: process.env.PREFERD_BANK
+  }
 };
 
 export default default_config;
