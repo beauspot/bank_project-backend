@@ -25,14 +25,44 @@ export class Account {
   @Column({ type: "varchar", nullable: false, unique: true })
   accountNumber: string;
 
+// derived from the user's full name
+  @Column({ type: "varchar", nullable: true })
+  accountName: string;
+
+// For transfers
+  @Column({ type: "varchar", nullable: true, unique: true })
+  paystackRecipientCode: string;
+
+  // Paysack's ref for virtual acct
+  @Column({ type: "varchar", nullable: true })
+  paystackAccountId: string;
+
+  @Column({ type: "varchar", nullable: true })
+  paystackBankName: string;
+
+  @Column({ type: "varchar", nullable: true })
+  paystackBankcode: string;
+
   @Column({ type: "decimal", precision: 30, scale: 2, default: 0.0 })
   balance: number;
 
-  @Column({ type: "varchar", nullable: false })
-  type: string; // e.g., 'savings', 'current', etc.
+  @Column({ type: "decimal", precision: 30, scale: 2, default: 0.0 })
+  ledgerBalance: number;
+
+  @Column({ type: "enum", enum: AccountType, default: AccountType.SAVINGS })
+  type: AccountType;
 
   @Column({ type: "enum", enum:AccountStatus, default: AccountStatus.PENDING })
-  status: string; // e.g., 'active', 'inactive', 'blocked'
+  status: AccountStatus;
+
+  @Column({ type: "jsonb", nullable: true })
+  paystackMetadata: {
+    virtualAccountNumber?: string;
+    virtualAccountBank?: string;
+    virtualAccountName?: string;
+    assignmentDate?: Date;
+    lastWebhookReceived?: Date;
+  }
 
   @CreateDateColumn()
   createdAt: Date;
@@ -41,7 +71,7 @@ export class Account {
   updatedAt: Date;
 
   // Relationships
-  @OneToOne(() => User, (user) => user.accounts)
+  @OneToOne(() => User, (user) => user.account)
   @JoinColumn({ name: "userId" })
   user: User;
 
@@ -50,4 +80,21 @@ export class Account {
 
   @OneToMany(() => Loan, (loan) => loan.account)
   loans: Loan[];
+
+  // helper methd to check if the virtual acct is active 
+  isVirtualAcctActive(): boolean {
+    return (this.type === AccountType.VIRTUAL && 
+      this.status === AccountStatus.ACTIVE && 
+      !!this.accountNumber
+      );
+  }
+
+  // helper to get virtual acct details
+  getVirtualAcctDetails(){
+    return {
+      accountNumber: this.accountNumber,
+      bankName: this.paystackBankName,
+      accountName: this.accountName,
+    }
+  }
 }
