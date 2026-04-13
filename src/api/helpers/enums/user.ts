@@ -24,7 +24,7 @@ enum AccountStatus {
   INACTIVE = "INACTIVE",
   SUSPENDED = "SUSPENDED",
   BLOCKED = "BLOCKED",
-  PENDING = "PENDING"
+  PENDING = "PENDING",
 }
 
 enum AccountType {
@@ -33,10 +33,4 @@ enum AccountType {
   VIRTUAL = "virtual",
 }
 
-export {
-  UserRole,
-  GenderType,
-  EmailStatus,
-  AccountStatus,
-  AccountType,
-}
+export { UserRole, GenderType, EmailStatus, AccountStatus, AccountType };
