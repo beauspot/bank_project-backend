@@ -9,12 +9,12 @@ import {
   JoinColumn,
 } from "typeorm";
 
+import { AccountType, AccountStatus } from "@/enums/user";
 import { Loan } from "@/models/loanEntity";
 import { Transaction } from "@/models/transactionEntity";
 import { User } from "@/models/userEntity";
-import { AccountType, AccountStatus } from "@/enums/user"
 
-@Entity({ name: "accounts" })
+@Entity({ name: "Accounts" })
 export class Account {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -25,11 +25,14 @@ export class Account {
   @Column({ type: "varchar", nullable: false, unique: true })
   accountNumber: string;
 
-// derived from the user's full name
+  // derived from the user's full name
   @Column({ type: "varchar", nullable: true })
   accountName: string;
 
-// For transfers
+  @Column({ nullable: false, unique: true, type: "varchar" })
+  paystackCustomerCode: string;
+
+  // For transfers
   @Column({ type: "varchar", nullable: true, unique: true })
   paystackRecipientCode: string;
 
@@ -52,7 +55,7 @@ export class Account {
   @Column({ type: "enum", enum: AccountType, default: AccountType.SAVINGS })
   type: AccountType;
 
-  @Column({ type: "enum", enum:AccountStatus, default: AccountStatus.PENDING })
+  @Column({ type: "enum", enum: AccountStatus, default: AccountStatus.PENDING })
   status: AccountStatus;
 
   @Column({ type: "jsonb", nullable: true })
@@ -60,9 +63,10 @@ export class Account {
     virtualAccountNumber?: string;
     virtualAccountBank?: string;
     virtualAccountName?: string;
+    paystackCustomerCode?: string;
     assignmentDate?: Date;
     lastWebhookReceived?: Date;
-  }
+  };
 
   @CreateDateColumn()
   createdAt: Date;
@@ -81,20 +85,21 @@ export class Account {
   @OneToMany(() => Loan, (loan) => loan.account)
   loans: Loan[];
 
-  // helper methd to check if the virtual acct is active 
+  // helper methd to check if the virtual acct is active
   isVirtualAcctActive(): boolean {
-    return (this.type === AccountType.VIRTUAL && 
-      this.status === AccountStatus.ACTIVE && 
+    return (
+      this.type === AccountType.VIRTUAL &&
+      this.status === AccountStatus.ACTIVE &&
       !!this.accountNumber
-      );
+    );
   }
 
   // helper to get virtual acct details
-  getVirtualAcctDetails(){
+  getVirtualAcctDetails() {
     return {
       accountNumber: this.accountNumber,
       bankName: this.paystackBankName,
       accountName: this.accountName,
-    }
+    };
   }
 }
