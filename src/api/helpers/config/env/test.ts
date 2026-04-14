@@ -24,6 +24,11 @@ const test_config: AppConfig = {
     redis_url_host: "localhost",
     redis_url_port: "6379",
   },
+  paystack: {
+    paystack_secret_key: process.env.TEST_SECRET_KEY,
+    paystack_public_key: process.env.TEST_PUBLIC_KEY,
+    prefered_bank: process.env.PREFERD_BANK,
+  },
 };
 
 export default test_config;
