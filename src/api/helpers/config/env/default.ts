@@ -37,8 +37,8 @@ const default_config: AppConfig = {
   paystack: {
     paystack_secret_key: process.env.TEST_SECRET_KEY,
     paystack_public_key: process.env.TEST_PUBLIC_KEY,
-    prefered_bank: process.env.PREFERD_BANK
-  }
+    prefered_bank: process.env.PREFERD_BANK,
+  },
 };
 
 export default default_config;
