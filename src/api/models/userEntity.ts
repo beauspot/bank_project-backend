@@ -1,3 +1,4 @@
+// src/models/userEntity.ts
 import crypto from "crypto";
 
 import * as bcrypt from "bcryptjs";
@@ -9,7 +10,6 @@ import {
   BeforeUpdate,
   OneToMany,
   OneToOne,
-  // JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
   PrimaryGeneratedColumn,
@@ -37,7 +37,7 @@ export class User {
   @Column({ type: "varchar", nullable: false })
   lastname: string;
 
-  @Column({ type: "varchar", nullable: false })
+  @Column({ type: "varchar", nullable: false, unique: true })
   username: string;
 
   @Column({ type: "varchar", unique: true, nullable: false })
@@ -84,29 +84,14 @@ export class User {
   @Column({ type: "int", default: 0 })
   passwordResetAttempts: number;
 
-  @Column({ type: "varchar", unique: true, nullable: true })
-  account_no: string;
-
-  @Column({ type: "boolean", nullable: true })
+  @Column({ type: "boolean", default: false })
   isEmailVerified: boolean;
 
-  @Column({ type: "boolean", nullable: true })
+  @Column({ type: "boolean", default: true })
   accountStatus: boolean;
 
-  // @BeforeInsert()
-  // generateAccountName() {
-  //   this.accountName = `${this.firstName} ${this.middleName} ${this.lastName}`
-  // }
-
-  // @BeforeInsert()
-  // generateAccountID() {
-  //   this.account_no = this.phoneNumber;
-  // }
-
-  @BeforeInsert()
-  async generateId() {
-    this.id = uuidv4();
-  }
+  @Column({ type: "boolean", default: false })
+  isVirtualAcctCreated: boolean;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -114,6 +99,7 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  // Transaction PIN reset fields
   @Column({ type: "timestamp", nullable: true })
   transactionPinResetExpires: Date;
 
@@ -129,8 +115,8 @@ export class User {
   @Column({ type: "int", default: 0 })
   transactionResetAttempts: number;
 
-  @OneToOne(() => Account, (account) => account.user)
-  accounts: Account[];
+  @OneToOne(() => Account, (account) => account.user, { cascade: true })
+  account: Account;
 
   @OneToMany(() => Payee, (payee) => payee.user)
   payees: Payee[];
@@ -144,6 +130,12 @@ export class User {
   @OneToMany(() => Loan, (loan) => loan.user)
   loans: Loan[];
 
+  // Computed property for full name
+  get fullName(): string {
+    return `${this.firstname} ${this.middlename ? this.middlename + " " : ""}${this.lastname}`;
+  }
+
+  // Methods
   async compareTransactionPin(pin: string): Promise<boolean> {
     return bcrypt.compare(pin, this.transaction_pin);
   }
@@ -153,9 +145,14 @@ export class User {
   }
 
   @BeforeInsert()
+  async generateId() {
+    this.id = uuidv4();
+  }
+
+  @BeforeInsert()
   @BeforeUpdate()
   async hashTransactionPin() {
-    if (this.transaction_pin) {
+    if (this.transaction_pin && !this.transaction_pin.startsWith("$2")) {
       const saltRounds = 12;
       this.transaction_pin = await bcrypt.hash(
         this.transaction_pin,
@@ -166,27 +163,23 @@ export class User {
 
   @BeforeInsert()
   @BeforeUpdate()
-  encryptSensitiveData() {
-    if (this.bvn) {
-      this.bvn = this.encryptData(this.bvn);
-    }
-    if (this.nin) {
-      this.nin = this.encryptData(this.nin);
+  async hashPassword() {
+    if (this.password && !this.password.startsWith("$2")) {
+      const saltRounds = 12;
+      this.password = await bcrypt.hash(this.password, saltRounds);
     }
   }
 
-  // decryptSensitiveData() {
-  //   if(this.bvn) this.bvn = this.decryptData(this.bvn)
-  // }
-
-  /*   @BeforeInsert()
+  @BeforeInsert()
   @BeforeUpdate()
-  syncAccountNoWithWallet() {
-    if (this.wallet) {
-      this.account_no =
-        this.wallet.virtualAccountNumber || "Temporary_ACCOUNT_NO";
+  encryptSensitiveData() {
+    if (this.bvn && !this.bvn.includes(":")) {
+      this.bvn = this.encryptData(this.bvn);
     }
-  } */
+    if (this.nin && this.nin && !this.nin.includes(":")) {
+      this.nin = this.encryptData(this.nin);
+    }
+  }
 
   createPasswordResetToken(): string {
     const otp = crypto.randomBytes(3).toString("hex");
@@ -194,7 +187,7 @@ export class User {
       .createHash("sha256")
       .update(otp)
       .digest("hex");
-    this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+    this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
     this.passwordResetAttempts = 0;
     return otp;
   }
