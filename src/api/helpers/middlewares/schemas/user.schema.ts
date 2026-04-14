@@ -156,15 +156,20 @@ const loginUserSchema = object({
     userData: object({
       phonenumber: string({
         required_error: "Your Phone number email or username is required",
-      }).refine((phoneNo) => validator.isMobilePhone(phoneNo), {
-        message: "Invalid phone number: ",
-      }),
+      })
+        .refine((phoneNo) => validator.isMobilePhone(phoneNo), {
+          message: "Invalid phone number: ",
+        })
+        .optional(),
       email: string({
         required_error: "Your email is required",
-      }),
+      }).optional(),
       password: string({
         required_error: "Password is required",
-      }),
+      }).min(1, "password is required"),
+    }).refine((data) => data.phonenumber || data.email, {
+      message: "Login with either your phone number or email address",
+      path: ["phonenumber"],
     }),
   }),
 });
