@@ -93,7 +93,7 @@ const globalErrorHandler: ErrorRequestHandler = (
   };
 
   if (process.env.NODE_ENV === "development") {
-    response.stack = err.stack; // Only show stack trace in development
+    response.stack = err.stack; // Only shows stack trace in development
     response.error = err.name;
   }
 
