@@ -1,4 +1,4 @@
-import { Request } from "express";
+// import { Request } from "express";
 import session from "express-session";
 
 import { UserRole, GenderType } from "@/enums/user";
@@ -26,13 +26,13 @@ interface UserInterface {
 
 interface UserServiceInterface {
   registerUser(userData: Partial<UserInterface>): Promise<{ user: User }>;
-  verifyEmailOTP(email: string, otp: string): Promise<boolean>;
-  loginUser(identifier: string, password: string): Promise<User>;
+  // verifyEmailOTP(email: string, otp: string): Promise<boolean>;
+  loginUser(identifier: UserRole, password: string): Promise<User>;
   logout(
     sessionObject: session.Session & Partial<session.SessionData>,
   ): Promise<void>;
   // For Express v5 with custom session data
-  logoutWithRequest(req: Request): Promise<void>;
+  // logoutWithRequest(req: Request): Promise<void>;
   // forgotPassword(identifier: string): Promise<string>;
   // forgotTransactionPin(email: string): Promise<string>;
   // resetPassword(email: string, otp: string, newPassword: string): Promise<string>;
@@ -48,6 +48,18 @@ interface UserAcctPayloadInterface {
   bvn: string;
   is_permanent: boolean;
   email: string;
+}
+
+interface virtualAccountPayload {
+  email: string;
+  bvn: string;
+  // firstname: string;
+  // lastname: string;
+  bank_name?: string;
+  // phonenumber: string;
+  userId?: string;
+  // account_no: string,
+  // accountName: string
 }
 
 declare module "express-session" {
@@ -71,4 +83,5 @@ export {
   UserServiceInterface,
   UserAcctPayloadInterface,
   AppSession,
+  virtualAccountPayload,
 };
