@@ -2,6 +2,7 @@ enum UserRole {
   CUSTOMER = "customer",
   ADMIN = "admin",
   AUDITOR = "AUDITOR",
+  SUPER_ADMIN = "super admin",
 }
 
 /* export enum UserType {
