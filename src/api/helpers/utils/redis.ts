@@ -1,4 +1,5 @@
-import { RedisStore } from "connect-redis";
+import connectRedis from "connect-redis";
+import session from "express-session";
 import Redis from "ioredis";
 
 import config from "@/api/helpers/config/env";
@@ -10,10 +11,12 @@ import log from "@/utils/logging";
 
 // Test Redis connection
 
+const RedisStore = connectRedis(session);
+
 const redisClient = new Redis({
   host: config.redis.redis_url_host,
   port: parseInt(config.redis.redis_url_port || "6379"),
-  maxRetriesPerRequest: 5,
+  maxRetriesPerRequest: null,
   enableOfflineQueue: true,
   db: 4,
   retryStrategy: (times) => {
