@@ -2,6 +2,7 @@ import { RequestHandler, Request, Response } from "express";
 import AsyncHandler from "express-async-handler";
 import { StatusCodes } from "http-status-codes";
 
+import { sanitizeSignupResponse } from "@/dto/user.dto";
 import { UserRole } from "@/enums/user";
 import UserService from "@/services/user.service";
 import AppError from "@/utils/appErrors";
@@ -21,9 +22,16 @@ class UserController {
       transaction_pin: req.body.transaction_pin,
     };
     const result = await this.userService.registerUser(userData);
+
+    const user = result.user ?? result;
+
     res.status(StatusCodes.CREATED).json({
       status: "Success",
-      data: result,
+      message:
+        "Account created Successfully, Your Bank Account is setup and would be ready shortly.",
+      data: {
+        user: sanitizeSignupResponse(user),
+      },
     });
   });
 
