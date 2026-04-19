@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "ES2022",
     "moduleResolution": "Bundler",
+    "typeRoots": ["./src/api/helpers/types/*.d.ts", "./node_modules/@types"],
     "rootDir": "./src",
     "outDir": "./dist",
     "checkJs": true,
@@ -24,7 +25,7 @@
     "strictPropertyInitialization": false,
     "resolveJsonModule": true,
     "isolatedModules": false,
-    "types": ["vitest/globals"],
+    // "types": ["vitest/globals"],
     "paths": {
       "@/*": ["./src/*"],
       "@/api/*": ["./src/api/*"],
