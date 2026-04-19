@@ -1,7 +1,6 @@
-import axios from "axios";
+import fetch from "node-fetch";
 
-// import log from "@/utils/logging";
-import config from "@/api/helpers/config/env";
+import config from "@/helpers/config/env";
 import AppError from "@/utils/appErrors";
 
 export class PaystackService {
@@ -11,9 +10,15 @@ export class PaystackService {
   constructor() {
     this.secretKey = config.paystack.paystack_secret_key!;
 
-    if (!this.secretKey) {
-      throw new Error("PAYSTACK_SECRET_KEY is not configured");
-    }
+    if (!this.secretKey)
+      throw new AppError("PAYSTACK_SECRET_KEY is not configured");
+  }
+
+  private get headers() {
+    return {
+      Authorization: `Bearer ${this.secretKey}`,
+      "Content-Type": "application/json",
+    };
   }
 
   async createVirtualAccount(data: {
@@ -24,41 +29,56 @@ export class PaystackService {
     bvn?: string;
   }) {
     try {
-      const headers = {
-        Authorization: `Bearer ${this.secretKey}`,
-        "Content-Type": "application/json",
-      };
+      // creating the paystack customer
+      const createCustomerResponse = await fetch(`${this.baseURL}/customer`, {
+        method: "POST",
+        headers: this.headers,
+        body: JSON.stringify(data),
+      });
 
-      // 1. Creating the paystack customer
-      const createCustomerData = await axios.post(
-        `${this.baseURL}/customer`,
-        {
-          email: data.email,
-          firstname: data.firstname,
-          lastname: data.lastname,
-          phone: data.phonenumber,
-        },
-        { headers },
-      );
+      const createCustomerData = (await createCustomerResponse.json()) as any;
 
-      if (!createCustomerData.data.status)
+      if (!createCustomerResponse.ok || !createCustomerData.status)
         throw new AppError(
-          `Paystack customer creation failed: ${createCustomerData.data.message}`,
+          `Paystack customer creation failed: ${Error}`,
           400,
           false,
         );
 
-      const customerCode = createCustomerData.data.data.customer_code;
+      const customerCode = createCustomerData.data.customer_code;
 
-      // 2. using the customer code to create the DVA (Dedicated Virtual Account)
+      // using the customerCode to create the DVA (Dedicated Virtual Account)
 
-      const DVA_RES = await axios.post(
-        `${this.baseURL}/dedicated_account`,
-        {
+      const DVA_RES = await fetch(`${this.baseURL}/dedicated_account`, {
+        method: "POST",
+        headers: this.headers,
+        body: JSON.stringify({
           customer: customerCode,
-          preferred_bank: config.paystack.preferred_bank || "wema-bank",
-        },
+          preffered_bank: config.paystack.preferred_bank || "wema-bank",
+        }),
+      });
+
+      const dvaData = (await DVA_RES.json()) as any;
+
+      if (!dvaData)
+        throw new AppError(
+          `Paystack DVA creation failed: ${dvaData.message}`,
+          400,
+          false,
+        );
+
+      return dvaData.data;
+    } catch (error: unknown) {
+      this.handleError(error);
+    }
+  }
+
+  async getVirtualAccount(accountId: string) {
+    try {
+      const response = await fetch(
+        `${this.baseURL}/dedicated_account/${accountId}`,
         {
+          method: "GET",
           headers: {
             Authorization: `Bearer ${this.secretKey}`,
             "Content-Type": "application/json",
@@ -66,58 +86,38 @@ export class PaystackService {
         },
       );
 
-      if (!DVA_RES.data.status) {
+      if (!response.ok)
         throw new AppError(
-          `Paystack Dedicated Account creation failed: ${DVA_RES.data.message}`,
-          400,
+          `Paystack API Error: ${response.status} - ${response.statusText}`,
+          response.status,
           false,
         );
-      }
-
-      return DVA_RES.data;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const body = error.response?.data;
-        throw new AppError(
-          `Paystack API error: ${error.response?.status} - ${JSON.stringify(body)}`,
-          error.response?.status || 500,
-          false,
-        );
-      }
-      throw new AppError(`Paystack API error: ${error}`, 500, false);
-    }
-  }
-
-  async getVirtualAccount(accountId: string) {
-    try {
-      const response = await axios.get(
-        `${this.baseURL}/dedicated_account/${accountId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${this.secretKey}`,
-          },
-        },
-      );
-      return response.data;
-    } catch (error) {
-      throw new AppError(`Paystack API error: ${error}`, 401, false);
+    } catch (error: unknown) {
+      this.handleError(error);
     }
   }
 
   async deactivateVirtualAccount(accountId: string) {
     try {
-      const response = await axios.post(
+      const r = await fetch(
         `${this.baseURL}/dedicated_account/${accountId}/deactivate`,
-        {},
         {
-          headers: {
-            Authorization: `Bearer ${this.secretKey}`,
-          },
+          method: "POST",
+          headers: this.headers,
         },
       );
-      return response.data;
-    } catch (error) {
-      throw new AppError(`Paystack API error: ${error}`, 401, false);
+
+      const _r = (await r.json()) as any;
+      if (!_r.ok) throw new AppError(_r.message);
+      return _r.data;
+    } catch (error: unknown) {
+      this.handleError(error);
     }
+  }
+
+  private handleError(error: unknown): never {
+    if (error instanceof AppError) throw error;
+    const message = error instanceof Error ? error.message : "Unknown Error";
+    throw new AppError(`Paystack API error: ${message}`, 500, false);
   }
 }
