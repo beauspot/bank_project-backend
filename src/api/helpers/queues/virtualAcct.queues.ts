@@ -1,22 +1,14 @@
-// src/queues/virtualAccount.queue.ts
 import { ConnectionOptions, QueueEvents, Queue, Worker } from "bullmq";
-// import Redis from "ioredis";
 
+import { PaystackService } from "@/api/services/paystack.service";
 import { AppDataSource } from "@/config/db.config";
 import { AccountStatus, AccountType } from "@/enums/user";
 import config from "@/helpers/config/env";
-// import { virtualAccountPayload } from "@/interface/user";
 import { Account } from "@/models/acctEntity";
 import { User } from "@/models/userEntity";
-import { PaystackService } from "@/services/paystack.service";
 import AppError from "@/utils/appErrors";
 import log from "@/utils/logging";
 import redisModule from "@/utils/redis";
-
-/* const redisConnection = new Redis({
-  host: config.redis.redis_url_host || "localhost",
-  port: parseInt(config.redis.redis_url_port || "6379"),
-});*/
 
 const { redisClient } = redisModule;
 const connection: ConnectionOptions = redisClient;
