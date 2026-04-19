@@ -1,4 +1,4 @@
-import { ErrorRequestHandler, Request, Response } from "express";
+import { ErrorRequestHandler, Request, Response, NextFunction } from "express";
 import { StatusCodes } from "http-status-codes";
 import { QueryFailedError, EntityNotFoundError } from "typeorm";
 
@@ -8,6 +8,7 @@ const globalErrorHandler: ErrorRequestHandler = (
   err: Error,
   req: Request,
   res: Response,
+  _next: NextFunction,
 ) => {
   // Default error response
   const e = new Error();
