@@ -49,16 +49,16 @@ export class User {
   @Column({ type: "date", nullable: false })
   date_of_birth: Date;
 
-  @Column({ type: "varchar", nullable: false })
+  @Column({ type: "text", nullable: false })
   password: string;
 
-  @Column({ type: "varchar", length: 255, nullable: false })
+  @Column({ type: "text", nullable: false })
   transaction_pin: string;
 
-  @Column({ type: "varchar", unique: true, length: 255, nullable: true })
+  @Column({ type: "text", unique: true, nullable: true })
   nin: string;
 
-  @Column({ type: "varchar", unique: true, length: 255, nullable: false })
+  @Column({ type: "text", unique: true, nullable: true })
   bvn: string;
 
   @Column({ type: "enum", enum: GenderType, nullable: false })
@@ -75,7 +75,7 @@ export class User {
   @Column({ type: "timestamp", nullable: true })
   passwordChangedAt: Date;
 
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: "text", nullable: true })
   passwordResetToken: string;
 
   @Column({ type: "timestamp", nullable: true })
@@ -99,18 +99,23 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  // Transaction PIN reset fields
   @Column({ type: "timestamp", nullable: true })
   transactionPinResetExpires: Date;
 
   @Column({ type: "int", default: 0 })
   transaction_pinResetAttempts: number;
 
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: "text", nullable: true })
   transactionPinResetToken: string;
 
-  @Column({ nullable: true, type: "timestamp" })
+  @Column({ type: "timestamp", nullable: true })
   transactionPinTokenExpires: Date;
+
+  @Column({ type: "varchar", length: 4, nullable: true })
+  emailVerificationOTP: string | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  emailVerificationOTPExpires: Date | null;
 
   @Column({ type: "int", default: 0 })
   transactionResetAttempts: number;
@@ -153,7 +158,7 @@ export class User {
   @BeforeUpdate()
   async hashTransactionPin() {
     if (this.transaction_pin && !this.transaction_pin.startsWith("$2")) {
-      const saltRounds = 12;
+      const saltRounds = 10;
       this.transaction_pin = await bcrypt.hash(
         this.transaction_pin,
         saltRounds,
@@ -176,7 +181,7 @@ export class User {
     if (this.bvn && !this.bvn.includes(":")) {
       this.bvn = this.encryptData(this.bvn);
     }
-    if (this.nin && this.nin && !this.nin.includes(":")) {
+    if (this.nin && !this.nin.includes(":")) {
       this.nin = this.encryptData(this.nin);
     }
   }
@@ -192,12 +197,12 @@ export class User {
     return otp;
   }
 
-  changedPasswordAfter(JWTTimestamp: number): boolean {
+  // Updated to accept Date instead of number — consistent with session.createdAt
+  changedPasswordAfter(sessionCreatedAt: Date): boolean {
     if (this.passwordChangedAt) {
-      const changedTimestamp = Math.floor(
-        this.passwordChangedAt.getTime() / 1000,
+      return (
+        this.passwordChangedAt.getTime() > new Date(sessionCreatedAt).getTime()
       );
-      return JWTTimestamp < changedTimestamp;
     }
     return false;
   }
