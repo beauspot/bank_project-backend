@@ -30,8 +30,17 @@ export interface AppConfig {
   };
 
   paystack: {
-      paystack_secret_key: string | undefined;
-      paystack_public_key: string | undefined;
-      prefered_bank: string | undefined;
-  }
+    paystack_secret_key: string | undefined;
+    paystack_public_key: string | undefined;
+    prefered_bank: string | undefined;
+  };
+
+  mail: {
+    host: string | undefined;
+    port: string | undefined;
+    user: string | undefined;
+    password: string | undefined;
+    from: string | undefined;
+    support_email: string | undefined;
+  };
 }
