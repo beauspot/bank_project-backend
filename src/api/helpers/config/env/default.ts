@@ -39,6 +39,14 @@ const default_config: AppConfig = {
     paystack_public_key: process.env.TEST_PUBLIC_KEY,
     prefered_bank: process.env.PREFERD_BANK,
   },
+  mail: {
+    host: process.env.MAIL_HOST,
+    port: process.env.MAIL_PORT,
+    user: process.env.MAIL_USER,
+    password: process.env.MAIL_PASSWORD,
+    from: process.env.MAIL_FROM,
+    support_email: process.env.MAIL_SUPPORT,
+  },
 };
 
 export default default_config;
