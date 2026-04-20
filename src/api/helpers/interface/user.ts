@@ -64,9 +64,9 @@ interface virtualAccountPayload {
 
 declare module "express-session" {
   interface SessionData {
-    userId?: string;
+    userId: string | undefined;
     userEmail?: string;
-    isLoggedIn?: boolean;
+    isLoggedIn: boolean | undefined;
     role?: UserRole;
   }
 }
