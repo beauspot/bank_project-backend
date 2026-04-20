@@ -108,7 +108,7 @@ export class EmailService {
       });
 
       const info = await this.transporter.sendMail({
-        from: `"Bank-Express" <${config.mail.from}>`,
+        from: `"Bank-Hub" <${config.mail.from}>`,
         to: data.email,
         subject: "Verify Your Email Address",
         html,
@@ -146,9 +146,9 @@ export class EmailService {
       });
 
       await this.transporter.sendMail({
-        from: `"Bank-Express" <${config.mail.from}>`,
+        from: `"Bank-Hub" <${config.mail.from}>`,
         to: data.email,
-        subject: "Welcome to Bank-Express!",
+        subject: "Welcome to Bank-Hub!",
         html,
       });
 
