@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { container } from "tsyringe";
 
 import UserController from "@/controllers/userCtrl";
+import { protect } from "@/helpers/middlewares/auth.middleware";
 import { validate } from "@/helpers/middlewares/validate";
 import { createUserSchema, loginUserSchema } from "@/schemas/user.schema";
 import UserService from "@/services/user.service";
@@ -31,6 +32,22 @@ const userRouter = () => {
   router.post("/logout", (req: Request, res: Response, next: NextFunction) => {
     return userController.LogoutUser(req, res, next);
   });
+
+  router.post(
+    "/send-otp",
+    protect,
+    (req: Request, res: Response, next: NextFunction) => {
+      return userController.sendVerificationOTP(req, res, next);
+    },
+  );
+
+  router.post(
+    "/verify-email",
+    protect,
+    (req: Request, res: Response, next: NextFunction) => {
+      return userController.verifyEmail(req, res, next);
+    },
+  );
 
   router.post("/forgotPassword", (req: Request, res: Response) => {
     return userController.fgt_pwd(req, res);
