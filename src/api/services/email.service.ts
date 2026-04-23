@@ -136,13 +136,13 @@ export class EmailService {
     message: string;
   }): Promise<void> {
     try {
-      const template = this.loadTemplate("welcome");
+      const template = this.loadTemplate("email");
 
       const html = this.replacePlaceholders(template, {
         NAME: data.name,
         MESSAGE: data.message,
         SUPPORT_MAIL: config.mail.support_email,
-        APPURL: config.app.app_url,
+        APPURL: config.mail.app_url,
       });
 
       await this.transporter.sendMail({
