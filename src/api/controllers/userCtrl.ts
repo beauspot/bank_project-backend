@@ -51,6 +51,7 @@ class UserController {
 
     req.session.userId = user.id;
     req.session.isLoggedIn = true;
+    req.session.createdAt = new Date();
 
     res.status(StatusCodes.OK).json({
       message: "Login Successful",
@@ -80,6 +81,28 @@ class UserController {
 
     res.status(StatusCodes.OK).json({
       message: "Successfully logged out",
+    });
+  });
+
+  sendVerificationOTP: RequestHandler = AsyncHandler(async (req, res) => {
+    await this.userService.sendVerificationOTP(req.session.userId!);
+
+    res.status(StatusCodes.OK).json({
+      status: "Success",
+      message: "Verification OTP sent to your email address",
+    });
+  });
+
+  verifyEmail: RequestHandler = AsyncHandler(async (req, res) => {
+    const { otp } = req.body;
+
+    if (!otp) throw new AppError("OTP is required", 400);
+
+    await this.userService.verifyEmail(req.session.userId!, otp);
+
+    res.status(StatusCodes.OK).json({
+      status: "Success",
+      message: "Email verified successfully",
     });
   });
 
