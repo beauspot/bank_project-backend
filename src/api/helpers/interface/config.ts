@@ -42,5 +42,6 @@ export interface AppConfig {
     password: string | undefined;
     from: string | undefined;
     support_email: string | undefined;
+    app_url: string | undefined;
   };
 }
