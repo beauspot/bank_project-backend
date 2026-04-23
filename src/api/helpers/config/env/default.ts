@@ -46,6 +46,7 @@ const default_config: AppConfig = {
     password: process.env.MAIL_PASSWORD,
     from: process.env.MAIL_FROM,
     support_email: process.env.MAIL_SUPPORT,
+    app_url: process.env.APP_URL,
   },
 };
 
