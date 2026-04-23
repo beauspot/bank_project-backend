@@ -7,7 +7,7 @@ const test_config: AppConfig = {
     port: 3000,
   },
   app_name: {
-    appName: "Bank-Express",
+    appName: "Bank-Hub",
   },
   db: {
     host: "localhost",
