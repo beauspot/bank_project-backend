@@ -36,6 +36,7 @@ const test_config: AppConfig = {
     host: process.env.MAIL_HOST,
     port: process.env.MAIL_PORT,
     support_email: process.env.MAIL_SUPPORT,
+    app_url: process.env.APP_URL,
   },
 };
 
