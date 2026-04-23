@@ -6,9 +6,11 @@ import { injectable, inject } from "tsyringe";
 // import { UserType } from "@/types/user.types";
 // import { UserRole } from "@/enums/user";
 import { UserInterface, UserServiceInterface } from "@/interface/user";
+import { queueVerificationOTP, queueWelcomeEmail } from "@/queues/mail.queue";
 import VirtualAcctQueue from "@/queues/virtualAcct.queues";
 import { UserRepository } from "@/repositories/user.repo";
 import AppError from "@/utils/appErrors";
+import { generateOTP, getOTPExpiry } from "@/utils/otp";
 // import { EmailJobData } from "@/interfaces/email.interface";
 // import emailQueues from "@/queues/email.queues";
 // import WalletQueue from "@/queues/wallet.queues";
@@ -78,6 +80,66 @@ class UserService implements UserServiceInterface {
         }
         resolve();
       });
+    });
+  }
+
+  async sendVerificationOTP(userId: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new AppError("User not found", 404);
+
+    if (user.isEmailVerified) {
+      throw new AppError("Email is already verified", 400);
+    }
+
+    const otp = generateOTP(4);
+    const expiryMinutes = 10;
+
+    // Save OTP to DB first before queuing
+    user.emailVerificationOTP = otp;
+    user.emailVerificationOTPExpires = getOTPExpiry(expiryMinutes);
+    await this.userRepository.save(user);
+
+    // Queue the email — non-blocking, returns immediately
+    await queueVerificationOTP({
+      email: user.email,
+      name: user.firstname,
+      otp,
+      expiryMinutes,
+    });
+  }
+
+  async verifyEmail(userId: string, otp: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new AppError("User not found", 404);
+
+    if (user.isEmailVerified)
+      throw new AppError("Email is already verified", 400);
+
+    if (!user.emailVerificationOTP || !user.emailVerificationOTPExpires)
+      throw new AppError("No OTP found, please request a new one", 400);
+
+    if (new Date() > user.emailVerificationOTPExpires) {
+      // Clear expired OTP
+      user.emailVerificationOTP = null;
+      user.emailVerificationOTPExpires = null;
+      await this.userRepository.save(user);
+      throw new AppError("OTP has expired, please request a new one", 400);
+    }
+
+    if (user.emailVerificationOTP !== otp)
+      throw new AppError("Invalid OTP", 400);
+
+    // Mark as verified and clear OTP
+    user.isEmailVerified = true;
+    user.emailVerificationOTP = null;
+    user.emailVerificationOTPExpires = null;
+    await this.userRepository.save(user);
+
+    // Queue welcome email — fire and forget after verification
+    await queueWelcomeEmail({
+      email: user.email,
+      name: user.firstname,
+      message: `Your email has been verified successfully. Welcome to Bank-Hub! Your account is now active.`,
     });
   }
 }
