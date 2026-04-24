@@ -2,6 +2,7 @@ node_modules
 .dist
 dist
 .env*
+.test.env
 .prod.env
 logs
 coverage
