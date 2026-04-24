@@ -11,15 +11,14 @@ import VirtualAcctQueue from "@/queues/virtualAcct.queues";
 import { UserRepository } from "@/repositories/user.repo";
 import AppError from "@/utils/appErrors";
 import { generateOTP, getOTPExpiry } from "@/utils/otp";
+import { UserServiceUtils } from "@/utils/user.utils";
+
+// const { redisClient } = redisModule;
+// const { addMailToQueue } = emailQueues;
 // import { EmailJobData } from "@/interfaces/email.interface";
 // import emailQueues from "@/queues/email.queues";
 // import WalletQueue from "@/queues/wallet.queues";
 // import redisModule from "@/utils/redis";
-
-import { UserServiceUtils } from "../helpers/utils/user.utils";
-
-// const { redisClient } = redisModule;
-// const { addMailToQueue } = emailQueues;
 
 // TODO: UserService class shld implement UserServiceInterface imported from "interface/user"
 
