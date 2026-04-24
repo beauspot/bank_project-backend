@@ -158,4 +158,63 @@ export class EmailService {
       throw new AppError("Failed to send welcome email", 500, false);
     }
   }
+
+  // Handles sending the otp to the email for altering the password
+  async sendPasswordResetOTP(data: {
+    email: string;
+    name: string;
+    otp: string;
+    expiryMinutes: number;
+  }): Promise<void> {
+    try {
+      const template = this.loadTemplate("password-reset");
+
+      const html = this.replacePlaceholders(template, {
+        NAME: data.name,
+        OTP: data.otp,
+        EXPIRY_MINUTES: data.expiryMinutes.toString(),
+        SUPPORT_MAIL: config.mail.support_email!,
+      });
+
+      await this.transporter.sendMail({
+        from: `"Bank-Hub" <${config.mail.from}>`,
+        to: data.email,
+        subject: "Password Reset Request",
+        html,
+      });
+
+      log.info(`Password reset OTP Sent to ${data.email}`);
+    } catch (error: unknown) {
+      log.error(
+        `Failed to send Password recovery email to ${data.email}: ${error}`,
+      );
+      throw new AppError("Failed to send Forgot passsword email", 500, false);
+    }
+  }
+
+  // handles email confirmation after passwords has been changed.
+  async sendPasswordChangedEmail(data: {
+    email: string;
+    name: string;
+  }): Promise<void> {
+    try {
+      const template = this.loadTemplate("password-changed");
+
+      const html = this.replacePlaceholders(template, {
+        NAME: data.name,
+        SUPPORT_MAIL: config.mail.support_email!,
+      });
+
+      await this.transporter.sendMail({
+        from: `"Bank-Hub" <${config.mail.from}>`,
+        to: data.email,
+        subject: "Your Password Has been Changed Successfully.",
+        html,
+      });
+      log.info(`Password changed email sent to ${data.email}`);
+    } catch (error: unknown) {
+      log.error(`Failed to send password changed email: ${error}`);
+      throw new AppError("Failed to send password changed email", 500, false);
+    }
+  }
 }
