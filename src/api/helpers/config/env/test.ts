@@ -1,4 +1,7 @@
+import dotenv from "dotenv";
+
 import { AppConfig } from "@/interface/config";
+dotenv.config({ path: ".test.env" });
 
 const test_config: AppConfig = {
   node_env: "test",
@@ -10,11 +13,11 @@ const test_config: AppConfig = {
     appName: "Bank-Hub",
   },
   db: {
-    host: "localhost",
-    port: 5432,
-    db_name: "test",
-    db_password: "test",
-    db_user: "user",
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 5432,
+    db_name: process.env.DB_NAME,
+    db_password: process.env.DB_PASS,
+    db_user: process.env.DB_USER,
     db_migration_name: "test",
   },
   session: {
