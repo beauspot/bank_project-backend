@@ -15,7 +15,7 @@ describe("index routing in a development/test env only!!!", () => {
     expect(request.type).toBe("text/html");
     expect(request.header["content-type"]).toBe("text/html; charset=utf-8");
     expect(request.text).toBe(
-      '<h1>Bank-Express API Documentation</h1><a href="/api-docs">Documentation</a>',
+      '<h1>Bank-Hub API Documentation</h1><a href="/api-docs">Documentation</a>',
     );
   });
 });
