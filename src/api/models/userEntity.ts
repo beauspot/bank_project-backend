@@ -64,7 +64,7 @@ export class User {
   @Column({ type: "enum", enum: GenderType, nullable: false })
   gender: GenderType;
 
-  @Column({ type: "varchar", nullable: true })
+  @Column({ type: "varchar", nullable: true, select: true })
   profilePhoto: string | null;
 
   @Column({ type: "varchar", nullable: true })
