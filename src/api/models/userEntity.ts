@@ -67,6 +67,9 @@ export class User {
   @Column({ type: "varchar", nullable: true })
   profilePhoto: string | null;
 
+  @Column({ type: "varchar", nullable: true })
+  profilePhotoPublicId: string | null;
+
   @Column({
     type: "enum",
     enum: UserRole,
