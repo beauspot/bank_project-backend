@@ -80,4 +80,31 @@ const applyPasswordStrengthRefinement = (
   }
 };
 
-export { evaluatePasswordStrength, applyPasswordStrengthRefinement };
+const applyResetPasswordStrengthRefinement = (
+  data: { newpassword: string },
+  ctx: RefinementCtx,
+): void => {
+  const strength = evaluatePasswordStrength(data.newpassword, {});
+
+  if (!strength.acceptable) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["newpassword"],
+      message:
+        strength.warning ||
+        "Password is too weak. Try a longer passphrase or a mix of unrelated words.",
+      params: {
+        score: strength.score,
+        label: strength.label,
+        suggestions: strength.suggestions,
+        crackTime: strength.crackTime,
+      },
+    });
+  }
+};
+
+export {
+  evaluatePasswordStrength,
+  applyPasswordStrengthRefinement,
+  applyResetPasswordStrengthRefinement,
+};
