@@ -1,4 +1,4 @@
-import { RequestHandler, Request, Response } from "express";
+import { RequestHandler } from "express";
 import AsyncHandler from "express-async-handler";
 import { StatusCodes } from "http-status-codes";
 
@@ -106,29 +106,77 @@ class UserController {
     });
   });
 
-  async fgt_pwd(req: Request, res: Response) {
-    try {
-      res.json({
-        message: "Forgot password mail sent",
-      });
-    } catch (error: any) {
-      throw new AppError(
-        `Error in the forgot password endpoint: ${error.message}`,
-      );
-    }
-  }
+  fgt_pwd: RequestHandler = AsyncHandler(async (req, res) => {
+    const { email } = req.body;
+    if (!email) throw new AppError("Email is required", 400);
 
-  async reset_pwd(req: Request, res: Response) {
-    try {
-      res.json({
-        message: "Reset password successful",
-      });
-    } catch (error: any) {
+    await this.userService.forgotPassword(email);
+
+    res.status(StatusCodes.OK).json({
+      status: "Success",
+      message: `Password reset OTP has been send to your email ${email}`,
+    });
+  });
+
+  verifyResetOTP: RequestHandler = AsyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) throw new AppError(`Email & OTP are required`, 400);
+
+    const { resetToken } = await this.userService.verifyPasswordResetOTP(
+      email,
+      otp,
+    );
+
+    res.status(StatusCodes.OK).json({
+      status: "Success",
+      message: `OTP verified successfully. You can now reset your password.`,
+      data: { resetToken },
+    });
+  });
+
+  reset_pwd: RequestHandler = AsyncHandler(async (req, res) => {
+    const { resetToken, newpassword, confirmpassword } = req.body;
+
+    if (!resetToken || !newpassword || !confirmpassword)
       throw new AppError(
-        `Error in the reset password endpoint: ${error.message}`,
+        `Reset token, new password & confirm password are all required`,
+        400,
       );
-    }
-  }
+
+    await this.userService.resetPassword(
+      resetToken,
+      newpassword,
+      confirmpassword,
+    );
+    res.status(StatusCodes.OK).json({
+      status: "Success",
+      message:
+        "Reset password successful. You can now login with your new Password.",
+    });
+  });
+
+  getProfile: RequestHandler = AsyncHandler(async (req, res) => {
+    const profile = await this.userService.getUserProfile(req.session.userId!);
+
+    res.status(StatusCodes.OK).json({
+      status: "Success",
+      data: {
+        user: profile,
+      },
+    });
+  });
+
+  uploadPhoto: RequestHandler = AsyncHandler(async (req, res) => {
+    if (!req.file) throw new AppError("Please select a photo to upload", 400);
+
+    await this.userService.uploadProfilePhoto(req.session.userId!, req.file);
+
+    res.status(StatusCodes.ACCEPTED).json({
+      status: "Success",
+      message: "Photo uploaded. Your Profile will be updated shortly.",
+    });
+  });
 }
 
 export default UserController;
