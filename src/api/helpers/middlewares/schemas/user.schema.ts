@@ -4,7 +4,10 @@ import { TypeOf, nativeEnum, object, string } from "zod";
 import { AppDataSource } from "@/config/db.config";
 import { UserRole, GenderType } from "@/enums/user";
 import { User } from "@/models/userEntity";
-import { applyPasswordStrengthRefinement } from "@/utils/pwd.utils";
+import {
+  applyPasswordStrengthRefinement,
+  applyResetPasswordStrengthRefinement,
+} from "@/utils/pwd.utils";
 
 const userRepo = AppDataSource.getRepository(User);
 
@@ -174,6 +177,86 @@ const loginUserSchema = object({
   }),
 });
 
-export { createUserSchema, loginUserSchema };
+const verifyEmailOTPSchema = object({
+  body: object({
+    otp: string({
+      required_error: "Your Otp is required",
+    })
+      .min(6, "OTP must be minimum of 6 digits")
+      .max(6, "OTP must be max 6 digits"),
+  }),
+});
+
+const verifyMailForOTP = object({
+  body: object({
+    email: string({
+      required_error: "Your Email is required to send an OTP",
+    }).refine((email) => validator.isEmail(email), {
+      message: "Invalid email address",
+    }),
+  }),
+});
+
+const verifyResetOTP = object({
+  body: object({
+    email: string({
+      required_error: "Your Email is required to send an OTP",
+    }).refine((email) => validator.isEmail(email), {
+      message: "Invalid email address",
+    }),
+    otp: string({
+      required_error: "Your Otp is required",
+    })
+      .min(6, "OTP must be minimum of 6 digits")
+      .max(6, "OTP must be max 6 digits"),
+  }),
+});
+
+const resetPasswordSchema = object({
+  body: object({
+    resetToken: string({
+      required_error: "Token is required",
+    }),
+    newpassword: string({
+      required_error: "Please Enter a new Password",
+    })
+      .min(8, "Password is too short - should be 8 characters minimum")
+      .max(12, "Password must not be more than 12 characters long")
+      .regex(
+        /[A-Z]/,
+        "Password must contain at least one or more uppercase letters",
+      )
+      .regex(
+        /[a-z]/,
+        "Password must contain at least one or more lowercase letters",
+      )
+      .regex(/[0-9]/, "Password must contain at least one or more numbers")
+      .regex(
+        /[\W_]/,
+        "Password must contain at least one or more special characters",
+      ),
+    confirmpassword: string({
+      required_error: "Please confirm new password",
+    }),
+  })
+    .refine((data) => data.newpassword === data.confirmpassword, {
+      message: "Passwords do not match",
+      path: ["confirmpassword"],
+    })
+    .superRefine(applyResetPasswordStrengthRefinement),
+});
+
+export {
+  createUserSchema,
+  loginUserSchema,
+  verifyEmailOTPSchema,
+  verifyMailForOTP,
+  verifyResetOTP,
+  resetPasswordSchema,
+};
 export type CreateUserInput = TypeOf<typeof createUserSchema>;
 export type LoginSchema = TypeOf<typeof loginUserSchema>;
+export type VerifyEmailOTP = TypeOf<typeof verifyEmailOTPSchema>;
+export type VerifyMailForOTP = TypeOf<typeof verifyMailForOTP>;
+export type VerifyMResetOTP = TypeOf<typeof verifyResetOTP>;
+export type ResetPasswordSchema = TypeOf<typeof resetPasswordSchema>;
