@@ -1,5 +1,4 @@
-// src/models/userEntity.ts
-import crypto from "crypto";
+// import crypto from "crypto";
 
 import * as bcrypt from "bcryptjs";
 import Cryptojs from "crypto-js";
@@ -64,12 +63,6 @@ export class User {
   @Column({ type: "enum", enum: GenderType, nullable: false })
   gender: GenderType;
 
-  @Column({ type: "varchar", nullable: true, select: true })
-  profilePhoto: string | null;
-
-  @Column({ type: "varchar", nullable: true })
-  profilePhotoPublicId: string | null;
-
   @Column({
     type: "enum",
     enum: UserRole,
@@ -81,15 +74,6 @@ export class User {
   @Column({ type: "timestamp", nullable: true })
   passwordChangedAt: Date;
 
-  @Column({ type: "text", nullable: true })
-  passwordResetToken: string;
-
-  @Column({ type: "timestamp", nullable: true })
-  passwordResetExpires: Date;
-
-  @Column({ type: "int", default: 0 })
-  passwordResetAttempts: number;
-
   @Column({ type: "boolean", default: false })
   isEmailVerified: boolean;
 
@@ -99,32 +83,17 @@ export class User {
   @Column({ type: "boolean", default: false })
   isVirtualAcctCreated: boolean;
 
+  @Column({ type: "varchar", nullable: true })
+  profilePhoto: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  profilePhotoPublicId: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
-
-  @Column({ type: "timestamp", nullable: true })
-  transactionPinResetExpires: Date;
-
-  @Column({ type: "int", default: 0 })
-  transaction_pinResetAttempts: number;
-
-  @Column({ type: "text", nullable: true })
-  transactionPinResetToken: string;
-
-  @Column({ type: "timestamp", nullable: true })
-  transactionPinTokenExpires: Date;
-
-  @Column({ type: "varchar", length: 4, nullable: true })
-  emailVerificationOTP: string | null;
-
-  @Column({ type: "timestamp", nullable: true })
-  emailVerificationOTPExpires: Date | null;
-
-  @Column({ type: "int", default: 0 })
-  transactionResetAttempts: number;
 
   @OneToOne(() => Account, (account) => account.user, { cascade: true })
   account: Account;
@@ -141,12 +110,10 @@ export class User {
   @OneToMany(() => Loan, (loan) => loan.user)
   loans: Loan[];
 
-  // Computed property for full name
   get fullName(): string {
     return `${this.firstname} ${this.middlename ? this.middlename + " " : ""}${this.lastname}`;
   }
 
-  // Methods
   async compareTransactionPin(pin: string): Promise<boolean> {
     return bcrypt.compare(pin, this.transaction_pin);
   }
@@ -164,11 +131,7 @@ export class User {
   @BeforeUpdate()
   async hashTransactionPin() {
     if (this.transaction_pin && !this.transaction_pin.startsWith("$2")) {
-      const saltRounds = 10;
-      this.transaction_pin = await bcrypt.hash(
-        this.transaction_pin,
-        saltRounds,
-      );
+      this.transaction_pin = await bcrypt.hash(this.transaction_pin, 10);
     }
   }
 
@@ -176,8 +139,7 @@ export class User {
   @BeforeUpdate()
   async hashPassword() {
     if (this.password && !this.password.startsWith("$2")) {
-      const saltRounds = 12;
-      this.password = await bcrypt.hash(this.password, saltRounds);
+      this.password = await bcrypt.hash(this.password, 12);
     }
   }
 
@@ -192,18 +154,6 @@ export class User {
     }
   }
 
-  createPasswordResetToken(): string {
-    const otp = crypto.randomBytes(3).toString("hex");
-    this.passwordResetToken = crypto
-      .createHash("sha256")
-      .update(otp)
-      .digest("hex");
-    this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
-    this.passwordResetAttempts = 0;
-    return otp;
-  }
-
-  // Updated to accept Date instead of number — consistent with session.createdAt
   changedPasswordAfter(sessionCreatedAt: Date): boolean {
     if (this.passwordChangedAt) {
       return (
