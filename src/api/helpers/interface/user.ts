@@ -45,7 +45,7 @@ interface UserServiceInterface {
     newPassword: string,
     confirmPassword: string,
   ): Promise<void>;
-  get(userId: string): Promise<UserProfileResponse>;
+  getUserProfile(userId: string): Promise<UserProfileResponse>;
   uploadProfilePhoto(userId: string, file: Express.Multer.File): Promise<void>;
   requestPhoneNumberChange(
     userId: string,
