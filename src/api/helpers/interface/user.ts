@@ -1,6 +1,8 @@
+/* eslint-disable no-undef */
 // import { Request } from "express";
 import session from "express-session";
 
+import { UserSignupResponse, UserProfileResponse } from "@/dto/user.dto";
 import { UserRole, GenderType } from "@/enums/user";
 import { User } from "@/models/userEntity";
 
@@ -25,20 +27,33 @@ interface UserInterface {
 }
 
 interface UserServiceInterface {
-  registerUser(userData: Partial<UserInterface>): Promise<{ user: User }>;
+  registerUser(userData: Partial<UserInterface>): Promise<UserSignupResponse>;
   // verifyEmailOTP(email: string, otp: string): Promise<boolean>;
   loginUser(identifier: UserRole, password: string): Promise<User>;
   logout(
     sessionObject: session.Session & Partial<session.SessionData>,
   ): Promise<void>;
-  // For Express v5 with custom session data
-  // logoutWithRequest(req: Request): Promise<void>;
-  // forgotPassword(identifier: string): Promise<string>;
-  // forgotTransactionPin(email: string): Promise<string>;
-  // resetPassword(email: string, otp: string, newPassword: string): Promise<string>;
-  // resetTransactionPin(email: string, otp: string, newPin: string): Promise<string>;
-  // updatePassword(userId: string, currentPassword: string, newPassword: string): Promise<string>;
-  // updateTransactionPin(userId: string, currentPin: string, newPin: string): Promise<string>;
+  sendVerificationOTP(userId: string): Promise<void>;
+  verifyEmail(userId: string, otp: string): Promise<void>;
+  forgotPassword(email: string): Promise<void>;
+  verifyPasswordResetOTP(
+    email: string,
+    otp: string,
+  ): Promise<{ resetToken: string }>;
+  resetPassword(
+    resetToken: string,
+    newPassword: string,
+    confirmPassword: string,
+  ): Promise<void>;
+  get(userId: string): Promise<UserProfileResponse>;
+  uploadProfilePhoto(userId: string, file: Express.Multer.File): Promise<void>;
+  requestPhoneNumberChange(
+    userId: string,
+    newPhoneNumber: string,
+  ): Promise<void>;
+  verifyPhoneNumberChange(userId: string, otp: string): Promise<void>;
+  requestEmailChange(userId: string, newEmail: string): Promise<void>;
+  verifyEmailChange(userId: string, otp: string): Promise<void>;
 }
 
 interface UserAcctPayloadInterface {
