@@ -185,7 +185,7 @@ class UserService implements UserServiceInterface {
     await verifyOTP(OTP_KEYS.passwordReset(email), otp);
 
     // generate a short-lived reset token and store in
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetToken = crypto.randomBytes(6).toString("hex");
     await storeOTP(OTP_KEYS.passwordResetToken(resetToken), user.id);
 
     return { resetToken };
