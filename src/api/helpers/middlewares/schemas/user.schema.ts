@@ -1,5 +1,5 @@
 import validator from "validator";
-import { TypeOf, nativeEnum, object, string } from "zod";
+import { TypeOf, nativeEnum, object, string, z } from "zod";
 
 import { AppDataSource } from "@/config/db.config";
 import { UserRole, GenderType } from "@/enums/user";
@@ -246,6 +246,58 @@ const resetPasswordSchema = object({
     .superRefine(applyResetPasswordStrengthRefinement),
 });
 
+const requestPhoneChangeSchema = object({
+  body: object({
+    newPhoneNumber: string({
+      required_error: "New phone number is required",
+      invalid_type_error: "Phone number must be a string",
+    })
+      .min(1, "New phone number cannot be empty")
+      .refine(
+        (val) => validator.isMobilePhone(val, "any", { strictMode: true }),
+        {
+          message:
+            "Invalid phone number format. Please include country code e.g +2348012345678",
+        },
+      ),
+  }),
+});
+
+const verifyPhoneChangeSchema = object({
+  body: object({
+    otp: string({
+      required_error: "OTP is required",
+      invalid_type_error: "OTP must be a string",
+    })
+      .length(6, "OTP must be exactly 6 digits")
+      .regex(/^\d{6}$/, "OTP must contain only digits"),
+  }),
+});
+
+const requestEmailChangeSchema = object({
+  body: object({
+    newEmail: string({
+      required_error: "New email address is required",
+      invalid_type_error: "Email must be a string",
+    })
+      .min(1, "New email address cannot be empty")
+      .refine((val) => validator.isEmail(val), {
+        message: "Invalid email address format",
+      }),
+  }),
+});
+
+const verifyEmailChangeSchema = object({
+  body: object({
+    otp: string({
+      required_error: "OTP is required",
+      invalid_type_error: "OTP must be a string",
+    })
+      .length(6, "OTP must be exactly 6 digits")
+      .regex(/^\d{6}$/, "OTP must contain only digits"),
+  }),
+});
+
 export {
   createUserSchema,
   loginUserSchema,
@@ -253,6 +305,10 @@ export {
   verifyMailForOTP,
   verifyResetOTP,
   resetPasswordSchema,
+  verifyEmailChangeSchema,
+  requestEmailChangeSchema,
+  verifyPhoneChangeSchema,
+  requestPhoneChangeSchema,
 };
 export type CreateUserInput = TypeOf<typeof createUserSchema>;
 export type LoginSchema = TypeOf<typeof loginUserSchema>;
@@ -260,3 +316,7 @@ export type VerifyEmailOTP = TypeOf<typeof verifyEmailOTPSchema>;
 export type VerifyMailForOTP = TypeOf<typeof verifyMailForOTP>;
 export type VerifyMResetOTP = TypeOf<typeof verifyResetOTP>;
 export type ResetPasswordSchema = TypeOf<typeof resetPasswordSchema>;
+export type RequestPhoneChangeInput = z.infer<typeof requestPhoneChangeSchema>;
+export type VerifyPhoneChangeInput = z.infer<typeof verifyPhoneChangeSchema>;
+export type RequestEmailChangeInput = z.infer<typeof requestEmailChangeSchema>;
+export type VerifyEmailChangeInput = z.infer<typeof verifyEmailChangeSchema>;
