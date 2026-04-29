@@ -7,7 +7,7 @@ const test_config: AppConfig = {
   node_env: "test",
   node_config_dir: process.env.NODE_CONFIG_DIR,
   server: {
-    port: 3000,
+    port: 5050,
   },
   app_name: {
     appName: "Bank-Hub",
@@ -40,6 +40,12 @@ const test_config: AppConfig = {
     port: process.env.MAIL_PORT,
     support_email: process.env.MAIL_SUPPORT,
     app_url: process.env.APP_URL,
+  },
+  cloudinary: {
+    cloud_name: process.env.CLOUD_NAME,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_key_name: process.env.CLOUDINARY_API_KEY_NAME,
   },
 };
 
