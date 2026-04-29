@@ -48,6 +48,12 @@ const default_config: AppConfig = {
     support_email: process.env.MAIL_SUPPORT,
     app_url: process.env.APP_URL,
   },
+  cloudinary: {
+    cloud_name: process.env.CLOUD_NAME,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_key_name: process.env.CLOUDINARY_API_KEY_NAME,
+  },
 };
 
 export default default_config;
