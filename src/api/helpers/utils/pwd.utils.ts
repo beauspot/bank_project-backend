@@ -18,7 +18,7 @@ const scoreLabels: Record<number, string> = {
 
 /*
     Core evaluator  
-    Ref this anywhere the full zxcvbn result will be needed - route handlers,
+    when this is refed anywhere the full zxcvbn result will be needed - route handlers,
     real-time strength endpoint, tests, etc
 */
 
