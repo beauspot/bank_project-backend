@@ -2,7 +2,6 @@ import { RequestHandler } from "express";
 import AsyncHandler from "express-async-handler";
 import { StatusCodes } from "http-status-codes";
 
-import { sanitizeSignupResponse } from "@/dto/user.dto";
 import { UserRole } from "@/enums/user";
 import UserService from "@/services/user.service";
 import AppError from "@/utils/appErrors";
@@ -21,16 +20,14 @@ class UserController {
       ...req.body.userData,
       transaction_pin: req.body.transaction_pin,
     };
-    const result = await this.userService.registerUser(userData);
-
-    const user = result.user ?? result;
+    const user = await this.userService.registerUser(userData);
 
     res.status(StatusCodes.CREATED).json({
       status: "Success",
       message:
         "Account created Successfully, Your Bank Account is setup and would be ready shortly.",
       data: {
-        user: sanitizeSignupResponse(user),
+        user,
       },
     });
   });
@@ -175,6 +172,63 @@ class UserController {
     res.status(StatusCodes.ACCEPTED).json({
       status: "Success",
       message: "Photo uploaded. Your Profile will be updated shortly.",
+    });
+  });
+
+  requestPhoneChange: RequestHandler = AsyncHandler(async (req, res) => {
+    const { newPhoneNumber } = req.body;
+
+    if (!newPhoneNumber)
+      throw new AppError("New Phone number is required", 400);
+
+    await this.userService.requestPhoneNumberChange(
+      req.session.userId!,
+      newPhoneNumber,
+    );
+
+    res.status(StatusCodes.OK).json({
+      status: "Success",
+      message:
+        "An OTP has been sent to your email address to verify your new phone number",
+    });
+  });
+
+  verifyPhoneChange: RequestHandler = AsyncHandler(async (req, res) => {
+    const { otp } = req.body;
+
+    if (!otp) throw new AppError("OTP is required", 400);
+
+    await this.userService.verifyPhoneNumberChange(req.session.userId!, otp);
+
+    res.status(StatusCodes.OK).json({
+      status: "Success",
+      message: "Phone number updated successfully",
+    });
+  });
+
+  requestEmailChange: RequestHandler = AsyncHandler(async (req, res) => {
+    const { newEmail } = req.body;
+
+    if (!newEmail) throw new AppError("New email address is required", 400);
+
+    await this.userService.requestEmailChange(req.session.userId!, newEmail);
+
+    res.status(StatusCodes.OK).json({
+      status: "Success",
+      message: "An OTP has been sent to your email address to verify it",
+    });
+  });
+
+  verifyEmailChange: RequestHandler = AsyncHandler(async (req, res) => {
+    const { otp } = req.body;
+
+    if (!otp) throw new AppError("OTP is required", 400);
+
+    await this.userService.verifyEmailChange(req.session.userId!, otp);
+
+    res.status(StatusCodes.OK).json({
+      status: "Success",
+      message: "Email address updated successfully",
     });
   });
 }
