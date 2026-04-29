@@ -1,0 +1,155 @@
+<!-- src/api/helpers/templates/contact-changed.html -->
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Contact Details Updated</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,600" rel="stylesheet" type="text/css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f5f6fa;
+      font-family: 'Roboto', sans-serif;
+      color: #8094ae;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 0 auto;
+    }
+
+    .container {
+      max-width: 620px;
+      background: #ffffff;
+      margin: auto;
+    }
+
+    .header {
+      text-align: center;
+      padding: 30px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #000000;
+    }
+
+    .content {
+      padding: 30px;
+      color: #000000;
+    }
+
+    .alert-box {
+      text-align: center;
+      margin: 30px 0;
+      padding: 20px;
+      background-color: #fff8f0;
+      border-radius: 6px;
+      border: 1px solid #f6ad55;
+    }
+
+    .alert-box p {
+      color: #c05621;
+      font-weight: bold;
+      font-size: 16px;
+      margin: 0;
+    }
+
+    .action-box {
+      background-color: #f7fafc;
+      border-radius: 6px;
+      padding: 15px 20px;
+      margin: 20px 0;
+      border-left: 4px solid #4a6cf7;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      padding: 20px;
+      color: #8094ae;
+    }
+  </style>
+</head>
+
+<body>
+  <center>
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#f5f6fa">
+      <tr>
+        <td style="padding: 40px 0;">
+
+          <!-- Header -->
+          <table class="container">
+            <tbody>
+              <tr>
+                <td class="header">
+                  Bank-Hub
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Body -->
+          <table class="container">
+            <tbody>
+              <tr>
+                <td class="content">
+
+                  <p>Hello <strong>#NAME#</strong>,</p>
+
+                  <p>This is a security notification to let you know that your account's <strong>#CHANGED_FIELD#</strong> has been updated successfully.</p>
+
+                  <div class="alert-box">
+                    <p>⚠️ Your #CHANGED_FIELD# has been changed</p>
+                  </div>
+
+                  <p>If you made this change, no further action is required.</p>
+
+                  <div class="action-box">
+                    <p style="margin: 0; color: #2d3748;">
+                      If you did <strong>not</strong> make this change, your account may be compromised.
+                      Please contact our support team immediately at
+                      <strong>#SUPPORT_MAIL#</strong> to secure your account.
+                    </p>
+                  </div>
+
+                  <p>For your security, we recommend:</p>
+                  <ul style="color: #2d3748; line-height: 28px;">
+                    <li>Changing your password immediately</li>
+                    <li>Reviewing your recent account activity</li>
+                    <li>Contacting support if anything looks suspicious</li>
+                  </ul>
+
+                  <p style="margin-top: 20px;">
+                    — The Bank-Hub Team
+                  </p>
+
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Footer -->
+          <table class="container">
+            <tbody>
+              <tr>
+                <td class="footer">
+                  <p>This is an automated security notification from Bank-Hub.</p>
+                  <p>Please do not reply to this email.</p>
+                  <p style="padding-top: 10px; font-size: 12px;">
+                    This email was sent because a change was made to your Bank-Hub account.
+                  </p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+        </td>
+      </tr>
+    </table>
+  </center>
+</body>
+
+</html>
