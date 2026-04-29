@@ -1,33 +1,37 @@
-// import crypto from "crypto";
+import crypto from "crypto";
 
 import { Session } from "express-session";
 import { injectable, inject } from "tsyringe";
 
 // import { UserType } from "@/types/user.types";
 // import { UserRole } from "@/enums/user";
-import { sanitizeProfileResponse, UserProfileResponse } from "@/dto/user.dto";
+import {
+  sanitizeProfileResponse,
+  UserProfileResponse,
+  sanitizeSignupResponse,
+} from "@/dto/user.dto";
 import { UserInterface, UserServiceInterface } from "@/interface/user";
 import {
   queueVerificationOTP,
   queueWelcomeEmail,
   queuePasswordResetOTP,
   queuePasswordChangedEmail,
+  queueContactChangedEmail,
 } from "@/queues/mail.queue";
 import { queueProfilePhotoUploadProcessing } from "@/queues/profilePhoto.queue";
 import VirtualAcctQueue from "@/queues/virtualAcct.queues";
 import { UserRepository } from "@/repositories/user.repo";
 import AppError from "@/utils/appErrors";
-import { generateOTP, getOTPExpiry } from "@/utils/otp";
+import {
+  generateOTP,
+  storeOTP,
+  verifyOTP,
+  storePendingValue,
+  getPendingValue,
+  deletePendingValue,
+  OTP_KEYS,
+} from "@/utils/otp";
 import { UserServiceUtils } from "@/utils/user.utils";
-
-// const { redisClient } = redisModule;
-// const { addMailToQueue } = emailQueues;
-// import { EmailJobData } from "@/interfaces/email.interface";
-// import emailQueues from "@/queues/email.queues";
-// import WalletQueue from "@/queues/wallet.queues";
-// import redisModule from "@/utils/redis";
-
-// TODO: UserService class shld implement UserServiceInterface imported from "interface/user"
 
 @injectable()
 class UserService implements UserServiceInterface {
@@ -55,25 +59,31 @@ class UserService implements UserServiceInterface {
 
     await VirtualAcctQueue.queueVirtualAccountCreation(savedUser.id, userData);
 
-    return { user: savedUser };
+    return sanitizeSignupResponse(savedUser);
   }
 
   async loginUser(identifier: string, password: string) {
-    if (!identifier || !password) {
+    if (!identifier || !password)
       throw new AppError("Provide phone or email and password!");
-    }
 
     const user = await this.userRepository.findOne({
       where: [{ email: identifier }, { phonenumber: identifier }],
-      select: ["id", "password"],
+      select: [
+        "id",
+        "email",
+        "firstname",
+        "middlename",
+        "lastname",
+        "role",
+        "password",
+      ],
     });
 
     if (
       !user ||
       !(await this.userServiceUtils.verifyPassword(password, user.password))
-    ) {
+    )
       throw new AppError("Incorrect email/phone number or password");
-    }
 
     return user;
   }
@@ -81,28 +91,24 @@ class UserService implements UserServiceInterface {
   async logout(session: Session): Promise<void> {
     return new Promise((resolve, reject) => {
       session.destroy((error: any) => {
-        if (error) {
-          return reject(new AppError("Logout Failed."));
-        }
+        if (error) return reject(new AppError("Logout Failed."));
         resolve();
       });
     });
   }
 
   async sendVerificationOTP(userId: string): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.userRepository.findById(userId);
     if (!user) throw new AppError("User not found", 404);
 
     if (user.isEmailVerified)
       throw new AppError("Email is already verified", 400);
 
-    const otp = generateOTP(4);
+    const otp = generateOTP(6);
     const expiryMinutes = 10;
 
-    // Save OTP to DB first before queuing
-    user.emailVerificationOTP = otp;
-    user.emailVerificationOTPExpires = getOTPExpiry(expiryMinutes);
-    await this.userRepository.save(user);
+    // Save OTP in Redis first before queuing - auto Expires after 10mins
+    await storeOTP(OTP_KEYS.emailVerification(userId), otp);
 
     // Queue the email — non-blocking, returns immediately
     await queueVerificationOTP({
@@ -114,30 +120,16 @@ class UserService implements UserServiceInterface {
   }
 
   async verifyEmail(userId: string, otp: string): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const user = await this.userRepository.findById(userId);
     if (!user) throw new AppError("User not found", 404);
 
     if (user.isEmailVerified)
       throw new AppError("Email is already verified", 400);
 
-    if (!user.emailVerificationOTP || !user.emailVerificationOTPExpires)
-      throw new AppError("No OTP found, please request a new one", 400);
+    // user verifies the OTP from Redis - throws error if invalid or expired
+    await verifyOTP(OTP_KEYS.emailVerification(userId), otp);
 
-    if (new Date() > user.emailVerificationOTPExpires) {
-      // Clear expired OTP
-      user.emailVerificationOTP = null;
-      user.emailVerificationOTPExpires = null;
-      await this.userRepository.save(user);
-      throw new AppError("OTP has expired, please request a new one", 400);
-    }
-
-    if (user.emailVerificationOTP !== otp)
-      throw new AppError("Invalid OTP", 400);
-
-    // Mark as verified and clear OTP
     user.isEmailVerified = true;
-    user.emailVerificationOTP = null;
-    user.emailVerificationOTPExpires = null;
     await this.userRepository.save(user);
 
     // Queue welcome email — fire and forget after verification
@@ -150,7 +142,7 @@ class UserService implements UserServiceInterface {
 
   // Step 1 - User forgets password
   async forgotPassword(email: string): Promise<void> {
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user)
       throw new AppError(
@@ -164,28 +156,11 @@ class UserService implements UserServiceInterface {
         403,
       );
 
-    // check if the user has exceeded reset attempts
-    if (user.passwordResetAttempts >= 5) {
-      const coolDownExpired =
-        !user.passwordResetExpires || new Date() > user.passwordResetExpires;
-
-      if (!coolDownExpired)
-        throw new AppError(
-          "Password Reset Limit reached.Please try again in 10 minutes",
-        );
-
-      // Reset attempts after cooldown has expired
-      user.passwordResetAttempts = 0;
-    }
-
     const otp = generateOTP(6);
     const expiryMinutes = 10;
 
-    // Save OTP to DB first before queuing
-    user.emailVerificationOTP = otp;
-    user.emailVerificationOTPExpires = getOTPExpiry(expiryMinutes);
-    user.passwordResetAttempts += 1;
-    await this.userRepository.save(user);
+    // Storing the OTP in redis keyed by email
+    await storeOTP(OTP_KEYS.passwordReset(email), otp);
 
     // Queue to email - non-blocking
     await queuePasswordResetOTP({
@@ -201,39 +176,17 @@ class UserService implements UserServiceInterface {
     email: string,
     otp: string,
   ): Promise<{ resetToken: string }> {
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userRepository.findOne({ where: { email } });
 
     if (!user)
       throw new AppError(`No account found with the email ${email}`, 404);
 
-    if (!user.emailVerificationOTP || !user.emailVerificationOTPExpires)
-      throw new AppError(
-        "No Password Reset Token was requested. Please request a new OTP",
-        400,
-      );
+    // Verify the OTP from redis
+    await verifyOTP(OTP_KEYS.passwordReset(email), otp);
 
-    // Checking if the OTP has expired
-    if (new Date() > user.emailVerificationOTPExpires) {
-      // Clearing the expired token
-      user.emailVerificationOTP = null!;
-      user.emailVerificationOTPExpires = null!;
-      await this.userRepository.save(user);
-      throw new AppError("OTP has expired. Please request a new one", 400);
-    }
-
-    // Compare the provided OTP with the One in the DB
-    if (user.emailVerificationOTP !== otp)
-      throw new AppError("Invalid OTP. Please try again", 400);
-
-    // OTP is valid - generating a short-lived reset token
-    // User sends this token to the reset password endpoint
-    const resetToken = user.createPasswordResetToken();
-
-    // Clear the token
-    user.passwordResetToken = resetToken;
-    user.passwordResetExpires = getOTPExpiry(10); // 10 more mins to reset
-
-    await this.userRepository.save(user);
+    // generate a short-lived reset token and store in
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    await storeOTP(OTP_KEYS.passwordResetToken(resetToken), user.id);
 
     return { resetToken };
   }
@@ -247,28 +200,27 @@ class UserService implements UserServiceInterface {
     if (newpassword !== confirmpassword)
       throw new AppError("Passwords do not match", 400);
 
-    const user = await this.userRepository.findByPasswordResetToken(resetToken);
+    // getting the userId from redis using the reset token
+    const userId = await getPendingValue(
+      OTP_KEYS.passwordResetToken(resetToken),
+    );
 
-    if (!user) throw new AppError("Invalid or expired reset token", 400);
-
-    if (!user.passwordResetExpires || new Date() > user.passwordResetExpires) {
-      user.passwordResetToken = null!;
-      user.passwordResetExpires = null!;
-      await this.userRepository.save(user);
+    if (!userId)
       throw new AppError(
-        "Reset token has Expired. Please request a new OTP",
+        "Invalid or expired reset token. Please request a new OTP",
         400,
       );
-    }
 
-    // Update password - @BeforeUpdate on User entity will hash it
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new AppError("User not found", 400);
+
+    // Updating Password - @BeforeUpdate hook hashes it
     user.password = newpassword;
-    user.passwordResetToken = null!;
-    user.passwordResetExpires = null!;
-    user.passwordResetAttempts = 0;
     user.passwordChangedAt = new Date();
-
     await this.userRepository.save(user);
+
+    // Deleting the reset Token from redis
+    await deletePendingValue(OTP_KEYS.passwordResetToken(resetToken));
 
     // Queuing Success notification email
     await queuePasswordChangedEmail({
@@ -303,6 +255,138 @@ class UserService implements UserServiceInterface {
       newPhotoUrl,
       newPhotoPublicId,
       oldPhotoPublicId: user.profilePhotoPublicId ?? null,
+    });
+  }
+
+  async requestPhoneNumberChange(
+    userId: string,
+    newPhoneNumber: string,
+  ): Promise<void> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new AppError("User not found", 404);
+
+    if (user.phonenumber === newPhoneNumber)
+      throw new AppError(
+        "New phone number cannot be the same as your current phone number",
+        400,
+      );
+
+    const existingUser = await this.userRepository.findOne({
+      where: { phonenumber: newPhoneNumber },
+    });
+
+    if (existingUser)
+      throw new AppError("This phone number is already in use", 409);
+
+    const otp = generateOTP(6);
+    const expiryMinutes = 10;
+
+    // Store OTP and pending phone number separately in Redis
+    await storeOTP(OTP_KEYS.phoneChange(userId), otp);
+    await storePendingValue(OTP_KEYS.pendingPhone(userId), newPhoneNumber);
+
+    await queueVerificationOTP({
+      email: user.email,
+      name: user.firstname,
+      otp,
+      expiryMinutes,
+    });
+  }
+
+  async verifyPhoneNumberChange(userId: string, otp: string): Promise<void> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new AppError("User not found", 404);
+
+    // Get pending phone number from Redis before verifying OTP
+    const newPhoneNumber = await getPendingValue(OTP_KEYS.pendingPhone(userId));
+
+    if (!newPhoneNumber)
+      throw new AppError(
+        "No phone number change was requested or it has expired. Please request a new OTP",
+        400,
+      );
+
+    // Verify OTP — throws if invalid or expired
+    await verifyOTP(OTP_KEYS.phoneChange(userId), otp);
+
+    // Update phone number
+    user.phonenumber = newPhoneNumber;
+    await this.userRepository.save(user);
+
+    // Clean up pending phone from Redis
+    await deletePendingValue(OTP_KEYS.pendingPhone(userId));
+
+    await queueContactChangedEmail({
+      email: user.email,
+      name: user.firstname,
+      changedField: "phone number",
+    });
+  }
+
+  async requestEmailChange(userId: string, newEmail: string): Promise<void> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new AppError("User not found", 404);
+
+    if (user.email === newEmail)
+      throw new AppError(
+        "New email cannot be the same as your current email address",
+        400,
+      );
+
+    const existingUser = await this.userRepository.findOne({
+      where: { email: newEmail },
+    });
+
+    if (existingUser)
+      throw new AppError("This email address is already in use", 409);
+
+    const otp = generateOTP(6);
+    const expiryMinutes = 10;
+
+    // Store OTP and pending email in Redis
+    await storeOTP(OTP_KEYS.emailChange(userId), otp);
+    await storePendingValue(OTP_KEYS.pendingEmail(userId), newEmail);
+
+    // Send OTP to the NEW email to prove they own it
+    await queueVerificationOTP({
+      email: newEmail,
+      name: user.firstname,
+      otp,
+      expiryMinutes,
+    });
+  }
+
+  async verifyEmailChange(userId: string, otp: string): Promise<void> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) throw new AppError("User not found", 404);
+
+    // Get pending email from Redis before verifying OTP
+    const newEmail = await getPendingValue(OTP_KEYS.pendingEmail(userId));
+
+    if (!newEmail)
+      throw new AppError(
+        "No email change was requested or it has expired. Please request a new OTP",
+        400,
+      );
+
+    // Verify OTP — throws if invalid or expired
+    await verifyOTP(OTP_KEYS.emailChange(userId), otp);
+
+    const oldEmail = user.email;
+
+    // Update email
+    user.email = newEmail;
+    user.isEmailVerified = true;
+    await this.userRepository.save(user);
+
+    // Clean up pending email from Redis
+    await deletePendingValue(OTP_KEYS.pendingEmail(userId));
+
+    // Security alert to OLD email
+    await queueContactChangedEmail({
+      email: oldEmail,
+      name: user.firstname,
+      changedField: "email address",
     });
   }
 }
