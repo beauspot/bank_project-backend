@@ -217,4 +217,32 @@ export class EmailService {
       throw new AppError("Failed to send password changed email", 500, false);
     }
   }
+
+  async sendContactChangedEmail(data: {
+    email: string;
+    name: string;
+    changedField: string;
+  }): Promise<void> {
+    try {
+      const template = this.loadTemplate("contact-changed");
+
+      const html = this.replacePlaceholders(template, {
+        NAME: data.name,
+        CHANGED_FIELD: data.changedField,
+        SUPPORT_MAIL: config.mail.support_email!,
+      });
+
+      await this.transporter.sendMail({
+        from: `"Bank-Hub" <${config.mail.from}>`,
+        to: data.email,
+        subject: `Your ${data.changedField} has been updated — Bank-Hub`,
+        html,
+      });
+
+      log.info(`Contact changed email sent to ${data.email}`);
+    } catch (error: any) {
+      log.error(`Failed to send contact changed email: ${error.message}`);
+      throw new AppError("Failed to send contact changed email", 500, false);
+    }
+  }
 }
