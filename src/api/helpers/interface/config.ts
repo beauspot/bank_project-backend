@@ -44,4 +44,11 @@ export interface AppConfig {
     support_email: string | undefined;
     app_url: string | undefined;
   };
+
+  cloudinary: {
+    cloud_name: string | undefined;
+    api_secret: string | undefined;
+    api_key: string | undefined;
+    api_key_name: string | undefined;
+  };
 }
