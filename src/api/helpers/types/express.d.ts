@@ -1,5 +1,7 @@
 import "express";
 
+import { UserRole } from "@/enums/user";
+
 declare global {
   namespace Express {
     interface Request {
@@ -11,6 +13,7 @@ declare global {
         firstname: string;
         lastname: string;
         phonenumber: string;
+        role: UserRole;
       };
     }
   }
